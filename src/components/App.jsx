@@ -9,7 +9,7 @@ const CONTACTS = 'contacts';
 
 export const App = () => {
   const [contacts, setContacts] = useState(
-    JSON.parse(window.localStorage.getItem(CONTACTS) ?? '')
+    JSON.parse(window.localStorage.getItem(CONTACTS) ?? [])
   );
   const [filter, setFilter] = useState('');
 
