@@ -1,38 +1,24 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { ContactForm } from './ContactForm/ContactForm';
 import { ContactList } from './ContactList/ContactList';
 import { Filter } from './Filter/Filter';
 import { nanoid } from 'nanoid';
 import { Box } from './Box/Box';
 
-const CONTACTS = 'contacts'
+const CONTACTS = 'contacts';
 
-export class App extends Component {
-  state = {
-    contacts: [],
-    filter: '',
-  };
+export const App = () => {
+  const [contacts, setContacts] = useState(
+    JSON.parse(window.localStorage.getItem(CONTACTS) ?? '')
+  );
+  const [filter, setFilter] = useState('');
 
-  componentDidMount() {
-    const savedContacts = localStorage.getItem(CONTACTS);
-    const parseContacts = JSON.parse(savedContacts);
+  useEffect(() => {
+    localStorage.setItem(CONTACTS, JSON.stringify(contacts));
+  }, [contacts]);
 
-    if (parseContacts) {
-      this.setState({ contacts: parseContacts });
-    }
-  }
-  
-  componentDidUpdate(_, prevState) {
-    const { contacts } = this.state;
-    if (contacts !== prevState.contacts) {
-      localStorage.setItem(CONTACTS, JSON.stringify(contacts));
-    }
-  }
-  
-
-  addContact = contact => {
+  const addContact = contact => {
     let isName = false;
-    const { contacts } = this.state;
     contacts.forEach(({ name }) => {
       if (contact.name.toLowerCase() === name.toLowerCase()) {
         alert(`${contact.name} is already in contacts`);
@@ -41,18 +27,11 @@ export class App extends Component {
     });
     if (!isName) {
       contact.id = nanoid();
-      this.setState(prevState => ({
-        contacts: [contact, ...prevState.contacts],
-      }));
+      setContacts(prevContacts => [contact, ...prevContacts]);
     }
   };
 
-  onChangeFilter = e => {
-    this.setState({ filter: e.currentTarget.value });
-  };
-
-  visibleContacts = () => {
-    const { contacts, filter } = this.state;
+  const visibleContacts = () => {
     const normalizedFilter = filter.toLowerCase();
     const filterContacts = contacts.filter(({ name }) =>
       name.toLowerCase().includes(normalizedFilter)
@@ -60,40 +39,37 @@ export class App extends Component {
     return filterContacts;
   };
 
-  deleteContact = contactId => {
-    this.setState(prevState => ({
-      contacts: prevState.contacts.filter(({ id }) => id !== contactId),
-    }));
+  const deleteContact = contactId => {
+    setContacts(prevContacts =>
+      prevContacts.filter(({ id }) => id !== contactId)
+    );
   };
 
-  render() {
-    const { contacts, filter } = this.state;
-    const changeFilter = this.onChangeFilter;
-    const filterContacts = this.visibleContacts();
-    const deleteContact = this.deleteContact;
-    return (
-      <Box display="flex" flexDirection="column" alignItems="center" pt="20px">
-        <Box
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          p="10px"
-          mb="20px"
-        >
-          <h1>Phonebook</h1>
-          <ContactForm addContact={this.addContact} />
-        </Box>
-        <Box display="flex" flexDirection="column" alignItems="center" p="10px">
-          <h2>Contacts</h2>
-          <Filter onSearch={changeFilter} value={filter} />
-          {contacts.length > 0 && (
-            <ContactList
-              contacts={filterContacts}
-              onDeleteContact={deleteContact}
-            />
-          )}
-        </Box>
+  return (
+    <Box display="flex" flexDirection="column" alignItems="center" pt="20px">
+      <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        p="10px"
+        mb="20px"
+      >
+        <h1>Phonebook</h1>
+        <ContactForm addContact={addContact} />
       </Box>
-    );
-  }
-}
+      <Box display="flex" flexDirection="column" alignItems="center" p="10px">
+        <h2>Contacts</h2>
+        <Filter
+          onSearch={(e) => setFilter(e.currentTarget.value)}
+          value={filter}
+        />
+        {contacts.length > 0 && (
+          <ContactList
+            contacts={visibleContacts()}
+            onDeleteContact={deleteContact}
+          />
+        )}
+      </Box>
+    </Box>
+  );
+};
